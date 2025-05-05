@@ -26,8 +26,8 @@ Route::post('/place',function (Request $request){
     $place->cash = $input['cash'];
     $place->lat = $input['lat'];
     $place->lng = $input['lng'];
-    $place->save();    
-    return json_encode(['result'=>'done']);
+    $place->save();
+    return json_encode(['result' => 'done', 'place' => $place]);
 });
 
 Route::delete('/place', function (Request $request) {
@@ -36,7 +36,7 @@ Route::delete('/place', function (Request $request) {
     if ($place) {
         $place->delete();
     }
-    return json_encode(['result'=>'done']);
+    return json_encode(['result' => 'done', 'removed' => $input['id']]);
 });
 
 

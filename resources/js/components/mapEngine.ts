@@ -1,8 +1,7 @@
 let map: google.maps.Map;
 const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
 
-//const { Map, InfoWindow } = await google.maps.importLibrary("maps");
-//const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+
 class mapEngine {   
     input!: HTMLInputElement;
     markerSet!: Function;
@@ -35,9 +34,12 @@ class mapEngine {
             this.clickListener = this.map.addListener('click', (evt: google.maps.MapMouseEvent) => {                
                 if (evt.latLng) {
                     this.cleanMarkers();
-                    this.addMarker('New Place', evt.latLng, true);
+                    const marker = this.addMarker({
+                        title: 'New Place', 
+                        position: evt.latLng
+                    });
                     this.last_position = { lat: evt.latLng.lat(), lng: evt.latLng.lng() };
-                    this.markerSet();
+                    this.markerSet(marker);
                 }
             });
         } else { 
@@ -48,8 +50,12 @@ class mapEngine {
 
     setMapCenter(position: google.maps.LatLng) { 
         this.map.setCenter(position);
-        this.cleanMarkers();
-        this.addMarker("You are here", position, false);
+        console.log("setMapCenter");
+        this.addMarker({
+            title: "You are here", 
+            position: position,
+            isCentralMarker: true,
+        });
     }
 
     getLocation() {
@@ -63,35 +69,45 @@ class mapEngine {
         }
     }
 
-    editForm() { 
-        console.log('editForm');
-    }
-
-    async addMarker(title:string, position:google.maps.LatLng, isRecycleIcon:boolean=false,  description:any=null) {            
+    addMarker(params: any) {
+        
+        const id = params.id || 0;
+        const title = params.title;
+        const position = params.position;
+        const description = params.description || null;
+        const image = params.image || null;
+        const isCentralMarker = params.isCentralMarker || false;
+        
+    
         const map: google.maps.Map = this.map;
         let option:any = {
             map,
             title: title,
-            position: position,          
+            position: position,                    
         };
 
-        if (isRecycleIcon) {             
-            option.content = this.recycle_image.cloneNode();
-        }
         
+        if (image != null) { 
+            option.content = image;
+        }
 
         const marker = new AdvancedMarkerElement(option);
-        
-        marker.addListener('click', () => {               
-            this.InfoWindow.close();          
-            this.InfoWindow.setHeaderContent(title);
-            if (description != null) { 
-                 this.InfoWindow.setContent(description);              
-            }
-            this.InfoWindow.open(marker.map, marker);
+        marker.dataset.id = id;
+        marker.dataset.description = description;
+        marker.addListener('click', (evt: any) => {               
+            let target = evt.domEvent.target;
+            if (target.tagName == 'IMG') { 
+                target = target.parentElement;
+            }                            
+            this.InfoWindow.close();                      
+            this.InfoWindow.setHeaderContent(target.title);                        
+            this.InfoWindow.setContent(target.dataset.description != 'null' ? target.dataset.description : '');                          
+            this.InfoWindow.open(target.map, target);
             
         });
-        this.markers.push(marker);
+        if (isCentralMarker == false){
+            this.markers.push(marker);
+        }        
         return marker;
     }
 
@@ -99,7 +115,28 @@ class mapEngine {
         this.markers.forEach((marker:any) => {
             marker.setMap(null);
         });
-        this.markers = [];
+        //this.markers = [];
+    }
+
+    returnMarkers() {
+        this.markers.forEach((marker: any) => {
+           marker.setMap(this.map);
+        });
+    }
+
+    changeMarker(place: any) { 
+        this.returnMarkers();
+        const theMarker = this.markers[this.markers.length - 1];
+        theMarker.setMap(null);
+        this.markers.pop();
+        this.placeToMarker(place);
+        
+    }
+
+    deleteMarker(id: number) {        
+        this.markers.filter((m: any) => m.dataset.id == id).forEach((m: any) => {            
+            m.setMap(null);
+        });
     }
 
     searchBoxServe() { 
@@ -114,7 +151,6 @@ class mapEngine {
             }
         });
 
-       
 
         // Listen for the event fired when the user selects a prediction and retrieve
         // more details for that place.
@@ -134,7 +170,10 @@ class mapEngine {
                     return;
                 }
                 // Create a marker for each place.                
-                this.addMarker(typeof place.name!='undefined'?place.name:'',  place.geometry.location, true)                   
+                this.addMarker({
+                    title: typeof place.name != 'undefined' ? place.name : '',  
+                    position: place.geometry.location
+                })                   
                 
                 if (place.geometry.viewport) {
                     // Only geocodes have viewport.
@@ -155,7 +194,6 @@ class mapEngine {
         }
         const directionsService = new google.maps.DirectionsService();
         const directionsRenderer = new google.maps.DirectionsRenderer();
-      
         directionsRenderer.setMap(this.map);
         const request: google.maps.DirectionsRequest = {
             origin: this.my_location!,
@@ -179,24 +217,42 @@ class mapEngine {
 
     }
 
+    placeToMarker(place: { id: number, title: string, lat: number, lng: number, from_time: any, to_time: any, updated_at: string, cash: number, status: number }) {
+        let description = ``;
+        if (place.from_time.length > 0 && place.to_time.length > 0) { 
+            description += `<div>Opening hours ${place.from_time} - ${place.to_time}</div>`;
+        }
+        if (place.cash == 1) { 
+            description += `<div>Cash compensation</div>`;
+        }
+        description += `<div><small>${(new Date(place.updated_at)).toLocaleDateString('en-GB')}</small></div>`
+            + `<div>`
+            + `<button onClick="const evt=new CustomEvent('route_me',{'detail':{ lat:${place.lat}, lng:${place.lng}} }); window.dispatchEvent(evt);">Route</button>&nbsp;`
+            + `<button onClick="const evt=new CustomEvent('report_me',{'detail':{ id:${place.id} }  }); window.dispatchEvent(evt);">Report</button>`
+            + `</div>`;
+        
+        const myImage = new Image();
+        myImage.src = "/images/recycle.png";
+        myImage.addEventListener('load', (evt) => {
+            this.addMarker({
+                title: place.title, 
+                position: new google.maps.LatLng(place.lat, place.lng),               
+                description: description,
+                id: place.id,
+                image: myImage
+                
+            }); 
+        });
+        
+    }
+
+
     async tryAddPlaces() {        
         const placesInterval=setInterval(() => {
             if (this.places != null) { 
                 this.places.forEach((place: {id:number, title:string,lat:number, lng:number,from_time:any,to_time:any,updated_at:string,cash:number,status:number}) => { 
+                    this.placeToMarker(place);
                     
-                    let description = ``;
-                    if (place.from_time.length > 0 && place.to_time.length > 0) { 
-                        description += `<div>Opening hours ${place.from_time} - ${place.to_time}</div>`;
-                    }
-                    if (place.cash == 1) { 
-                        description += `<div>Cash compensation</div>`;
-                    }
-                    description += `<div><small>${(new Date(place.updated_at)).toLocaleDateString('en-GB')}</small></div>`
-                        + `<div>`
-                        + `<button onClick="const evt=new CustomEvent('route_me',{'detail':{ lat:${place.lat}, lng:${place.lng}} }); window.dispatchEvent(evt);">Route</button>&nbsp;`
-                        + `<button onClick="const evt=new CustomEvent('report_me',{'detail':{ id:${place.id} }  }); window.dispatchEvent(evt);">Report</button>`
-                        + `</div>`;
-                    this.addMarker(place.title, new google.maps.LatLng(place.lat, place.lng),true,description);
                 });
                 clearInterval(placesInterval);
             }
@@ -223,14 +279,11 @@ class mapEngine {
             fullscreenControl:false,
         } as google.maps.MapOptions);
         this.InfoWindow = new InfoWindow();
-       
-       
-        this.addMarker("You are here!", new google.maps.LatLng(position.lat, position.lng),false);
-        
+        console.log("initMap ok");        
         this.searchBoxServe();
         window.addEventListener("route_me", (e: CustomEvent) => this.routeToDestination(e.detail));
         window.addEventListener("report_me", (e: CustomEvent) => this.ReportAboutExistsPlace(e.detail));
-       
+
         this.tryAddPlaces();
 
         google.maps.event.addDomListener(mapDiv, "click", (evt:any) => {

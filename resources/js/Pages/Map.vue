@@ -24,7 +24,7 @@ export default {
             reportForm: false,            
             reportFormConfirmation: false,
             reportExistForm: false,
-            reportId: 0,
+            reportId: 0,           
             reportData:{
                 'title': '',
                 'from_time': '',
@@ -58,7 +58,7 @@ export default {
             MapEngine.setReportMode(false);
         },
 
-        markerSet() {                   
+        markerSet() {                            
             this.reportFormConfirmation = true;      
         },
 
@@ -82,11 +82,13 @@ export default {
 
         
         saveReport() { 
+            const MapEngine = toRaw(this.MapEngine);  
             const position = this.MapEngine.getLastPosition();
             if (position.lat && position.lng) { 
                 this.reportData.lat = position.lat;
                 this.reportData.lng = position.lng;
-                axiosPro.post('/place', this.reportData, () => { 
+                axiosPro.post('/place', this.reportData, (response:any) => { 
+                    console.log("saveReport response", response);
                     this.reportForm = false;
                     this.reportData={
                         'title': '',
@@ -98,17 +100,19 @@ export default {
                         'status': 1
                         
                     };
+                    MapEngine.changeMarker(response.data.place);                    
                     this.reportModeEnd();
                 })
             }
             
         },
-        ReportExistsPlace(evt:any) { 
+        ReportExistsPlace(evt: any) { 
+            const MapEngine = toRaw(this.MapEngine);  
             if (evt.target.className == 'but_yes' && this.reportId>0) {
                 console.log(this.reportId);
                 
-                axiosPro.delete('/place', {'id':this.reportId}, () => { 
-
+                axiosPro.delete('/place', { 'id': this.reportId }, (response:any) => { 
+                    MapEngine.deleteMarker(response.data.removed); 
                 });
             }
             this.reportExistForm = false;
@@ -129,6 +133,7 @@ export default {
         const MapEngine = toRaw(this.MapEngine);        
         MapEngine.markerSet = this.markerSet;
         MapEngine.setInputElement(document.getElementById('search') as HTMLInputElement);        
+        console.log('mounted');
         MapEngine.initMap({ lat: 31.046051, lng: 34.851612 });
         MapEngine.getLocation();                    
         window.addEventListener("report_me", (e: CustomEvent) => this.ReportAboutExistsPlace(e.detail));
