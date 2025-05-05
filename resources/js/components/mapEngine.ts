@@ -2,7 +2,7 @@ let map: google.maps.Map;
 const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
 
 
-class mapEngine {   
+class MapEngine {   
     input!: HTMLInputElement;
     markerSet!: Function;
     markers:any = [];
@@ -25,12 +25,11 @@ class mapEngine {
     }
 
     getPlace(id: number) { 
-        return this.places.filter(p => p.id == id)[0];
+        return this.places.filter((p: { id: number }) => p.id == id)[0];
     }
 
-    setReportMode(editMode: Boolean) { 
+    setReportMode(editMode: boolean) { 
         if (editMode) {            
-            console.log("setReportMode before click",this);
             this.clickListener = this.map.addListener('click', (evt: google.maps.MapMouseEvent) => {                
                 if (evt.latLng) {
                     this.cleanMarkers();
@@ -42,8 +41,9 @@ class mapEngine {
                     this.markerSet(marker);
                 }
             });
-        } else { 
+        } else if(this.clickListener!=null) { 
             google.maps.event.removeListener(this.clickListener);
+            this.clickListener = null;
         }
     }
 
@@ -120,7 +120,7 @@ class mapEngine {
 
     returnMarkers() {
         this.markers.forEach((marker: any) => {
-           marker.setMap(this.map);
+            marker.setMap(this.map);
         });
     }
 
@@ -297,4 +297,4 @@ class mapEngine {
 
 }
 
-export default mapEngine;
+export default MapEngine;

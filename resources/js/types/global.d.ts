@@ -7,6 +7,18 @@ declare global {
     interface Window {
         axios: AxiosInstance;
     }
+    interface WindowEventMap {
+        "report_me": CustomEvent<{ id: number }>;
+        "route_me": CustomEvent<{ id: number }>;
+    }
+    interface ReportData {
+        title: string;
+        from_time: string;
+        to_time: string;
+        cash: string;
+        lat: number;
+        lng: number;
+    }
 
     var route: typeof ziggyRoute;
     var Ziggy: ZiggyConfig;

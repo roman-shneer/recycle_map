@@ -1,5 +1,5 @@
 <script lang="ts">
-import mapEngine from '../components/mapEngine.ts';
+import MapEngine from '../components/mapEngine.ts';
 import axiosPro from '../components/axiosPro.js';
 import { getCurrentInstance} from "vue";
 import { toRaw } from "vue";
@@ -8,17 +8,17 @@ export default {
     setup() {
         
         const instance:any = getCurrentInstance();
-        const MapEngine = new mapEngine();
+        const maps = new MapEngine();
         //get and set places from server
         
         axiosPro.get('/places', {}, (response: { data: {places:object} }) => {
-            MapEngine.setPlaces(response.data.places);                    
+            maps.setPlaces(response.data.places);                    
         });
-        (instance as any).MapEngine = MapEngine;
+        (instance as any).maps = maps;
         
     },   
     data() { 
-        const MapEngine = (getCurrentInstance() as any).MapEngine;
+        const maps = (getCurrentInstance() as any).maps;
         return {
             reportMode: false,
             reportForm: false,            
@@ -33,29 +33,29 @@ export default {
                 'lat': 0,
                 'lng':0,
                 'status': 1
-            },
-            MapEngine :  MapEngine
+            } as Record<string, string | number>,
+            maps :  maps
         };
     },
     methods: {
 
         reloadPlaces() { 
-            const MapEngine = toRaw(this.MapEngine);
+            const maps = toRaw(this.maps);
             axiosPro.get('/places', {}, (response: { data: {places:object} }) => {
-                MapEngine.setPlaces(response.data.places);                    
+                maps.setPlaces(response.data.places);                    
             });
         },
 
         reportModeStart() { 
             this.reportMode = true;
-            const MapEngine = toRaw(this.MapEngine);
-            MapEngine.setReportMode(true);
+            const maps = toRaw(this.maps);
+            maps.setReportMode(true);
         },
 
         reportModeEnd() { 
             this.reportMode = false;
-            const MapEngine = toRaw(this.MapEngine);
-            MapEngine.setReportMode(false);
+            const maps = toRaw(this.maps);
+            maps.setReportMode(false);
         },
 
         markerSet() {                            
@@ -69,26 +69,26 @@ export default {
 
         cancelMarker() { 
             this.reportFormConfirmation = false;
-            const MapEngine = toRaw(this.MapEngine);
-            MapEngine.cleanMarkers();
+            const maps = toRaw(this.maps);
+            maps.cleanMarkers();
         },
 
-        saveField(evt: any) {   
-            const key = evt.target.dataset.field as keyof typeof this.reportData;                 
-            if (key) {                 
-                this.reportData[key] = evt.target.value;               
+        saveField(evt: Event) {
+            const target = evt.target as HTMLInputElement;
+            const key = target.dataset.field as keyof typeof this.reportData;
+            if (key) {
+                this.reportData[key] = target.value;
             }
         },
 
         
         saveReport() { 
-            const MapEngine = toRaw(this.MapEngine);  
-            const position = this.MapEngine.getLastPosition();
+            const maps = toRaw(this.maps);  
+            const position = this.maps.getLastPosition();
             if (position.lat && position.lng) { 
                 this.reportData.lat = position.lat;
                 this.reportData.lng = position.lng;
-                axiosPro.post('/place', this.reportData, (response:any) => { 
-                    console.log("saveReport response", response);
+                axiosPro.post('/place', this.reportData, (response:any) => {                     
                     this.reportForm = false;
                     this.reportData={
                         'title': '',
@@ -100,27 +100,26 @@ export default {
                         'status': 1
                         
                     };
-                    MapEngine.changeMarker(response.data.place);                    
+                    maps.changeMarker(response.data.place);                    
                     this.reportModeEnd();
                 })
             }
             
         },
+        
         ReportExistsPlace(evt: any) { 
-            const MapEngine = toRaw(this.MapEngine);  
+            const maps = toRaw(this.maps);  
             if (evt.target.className == 'but_yes' && this.reportId>0) {
-                console.log(this.reportId);
-                
                 axiosPro.delete('/place', { 'id': this.reportId }, (response:any) => { 
-                    MapEngine.deleteMarker(response.data.removed); 
+                    maps.deleteMarker(response.data.removed); 
                 });
             }
             this.reportExistForm = false;
             this.reportId = 0;
         },
+
         ReportAboutExistsPlace(data: { id: number }) {
             this.reportId=data.id;
-            console.log("ReportAboutExistsPlace MAP.vue", data.id);
             this.reportExistForm = true;
         }
         
@@ -128,15 +127,16 @@ export default {
     
     components: {
     },
-        
+    
     mounted() {     
-        const MapEngine = toRaw(this.MapEngine);        
-        MapEngine.markerSet = this.markerSet;
-        MapEngine.setInputElement(document.getElementById('search') as HTMLInputElement);        
-        console.log('mounted');
-        MapEngine.initMap({ lat: 31.046051, lng: 34.851612 });
-        MapEngine.getLocation();                    
-        window.addEventListener("report_me", (e: CustomEvent) => this.ReportAboutExistsPlace(e.detail));
+        const maps = toRaw(this.maps);        
+        maps.markerSet = this.markerSet;
+        maps.setInputElement(document.getElementById('search') as HTMLInputElement);        
+        maps.initMap({ lat: 31.046051, lng: 34.851612 });
+        maps.getLocation();                    
+        window.addEventListener("report_me", (e: CustomEvent<{ id: number }>) => {
+            this.ReportAboutExistsPlace(e.detail);
+        });
     }
 }
 </script>
@@ -234,7 +234,7 @@ export default {
     margin-bottom:20px;
 }
 .time_input{
-    width:50px;
+    width:24%;
 }
 .title{
     border:solid gray 1px;

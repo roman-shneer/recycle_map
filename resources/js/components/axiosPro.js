@@ -1,6 +1,6 @@
 import axios from 'axios';
 const axiosPro = { 
-    get: function (url,params, callback) { 
+    get: function (url, params, callback) { 
         axios
             .get(url + '?' + new URLSearchParams(params).toString())
             .then(callback)
