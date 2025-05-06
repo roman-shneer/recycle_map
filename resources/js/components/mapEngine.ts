@@ -30,7 +30,7 @@ class MapEngine {
 
     setReportMode(editMode: boolean) { 
         if (editMode) {            
-            this.clickListener = this.map.addListener('click', (evt: google.maps.MapMouseEvent) => {                
+            this.clickListener = this.map.addListener('click', (evt: google.maps.MapMouseEvent) => {
                 if (evt.latLng) {
                     this.cleanMarkers();
                     const marker = this.addMarker({
@@ -50,7 +50,6 @@ class MapEngine {
 
     setMapCenter(position: google.maps.LatLng) { 
         this.map.setCenter(position);
-        console.log("setMapCenter");
         this.addMarker({
             title: "You are here", 
             position: position,
@@ -65,7 +64,7 @@ class MapEngine {
                 this.setMapCenter(this.my_location);             
             });
         } else {
-            console.log("Geolocation is not supported by this browser.");
+            console.error("Geolocation is not supported by this browser.");
         }
     }
 
@@ -83,7 +82,8 @@ class MapEngine {
         let option:any = {
             map,
             title: title,
-            position: position,                    
+            position: position,          
+            gmpClickable: true,
         };
 
         
@@ -94,11 +94,8 @@ class MapEngine {
         const marker = new AdvancedMarkerElement(option);
         marker.dataset.id = id;
         marker.dataset.description = description;
-        marker.addListener('click', (evt: any) => {               
-            let target = evt.domEvent.target;
-            if (target.tagName == 'IMG') { 
-                target = target.parentElement;
-            }                            
+        marker.addEventListener('gmp-click', (evt: any) => {  
+            const target = evt.target as any;                                 
             this.InfoWindow.close();                      
             this.InfoWindow.setHeaderContent(target.title);                        
             this.InfoWindow.setContent(target.dataset.description != 'null' ? target.dataset.description : '');                          
@@ -227,8 +224,8 @@ class MapEngine {
         }
         description += `<div><small>${(new Date(place.updated_at)).toLocaleDateString('en-GB')}</small></div>`
             + `<div>`
-            + `<button onClick="const evt=new CustomEvent('route_me',{'detail':{ lat:${place.lat}, lng:${place.lng}} }); window.dispatchEvent(evt);">Route</button>&nbsp;`
-            + `<button onClick="const evt=new CustomEvent('report_me',{'detail':{ id:${place.id} }  }); window.dispatchEvent(evt);">Report</button>`
+            + `<button onClick="window.dispatchEvent(new CustomEvent('route_me',{'detail':{ lat:${place.lat}, lng:${place.lng}} }));">Route</button>&nbsp;`
+            + `<button onClick="window.dispatchEvent(new CustomEvent('report_me',{'detail':{ id:${place.id} }  }));">Report</button>`
             + `</div>`;
         
         const myImage = new Image();
@@ -265,7 +262,7 @@ class MapEngine {
 
     async initMap(position: { lat: number, lng: number }): Promise<void> {
         
-        console.log("initMap ok")
+    
         const { Map, InfoWindow } = await google.maps.importLibrary("maps") as google.maps.MapsLibrary;
         const center: google.maps.LatLngLiteral = position;
         const mapDiv = document.getElementById("map") as HTMLElement;
@@ -278,21 +275,12 @@ class MapEngine {
             streetViewControl: false,
             fullscreenControl:false,
         } as google.maps.MapOptions);
-        this.InfoWindow = new InfoWindow();
-        console.log("initMap ok");        
+        this.InfoWindow = new InfoWindow();    
         this.searchBoxServe();
         window.addEventListener("route_me", (e: CustomEvent) => this.routeToDestination(e.detail));
         window.addEventListener("report_me", (e: CustomEvent) => this.ReportAboutExistsPlace(e.detail));
 
-        this.tryAddPlaces();
-
-        google.maps.event.addDomListener(mapDiv, "click", (evt:any) => {
-            console.log(evt, typeof evt);
-            if (evt.srcElement.tagName == 'DIV') { 
-                this.InfoWindow.close();  
-            }
-        });
-        
+        this.tryAddPlaces();        
     }
 
 }

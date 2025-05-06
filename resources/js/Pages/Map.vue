@@ -73,6 +73,14 @@ export default {
             maps.cleanMarkers();
         },
 
+        cancelForm() { 
+            this.reportForm = false;
+            this.reportFormConfirmation = false;
+            const maps = toRaw(this.maps);
+            maps.cleanMarkers();
+            this.reportModeEnd();
+        },
+
         saveField(evt: Event) {
             const target = evt.target as HTMLInputElement;
             const key = target.dataset.field as keyof typeof this.reportData;
@@ -144,32 +152,39 @@ export default {
     <div class="main">        
         <div class="report-form-confirmation" v-if="reportFormConfirmation">Its correct place? <button class="but_yes" @click="showEditForm">Yes</button> <button class="but_no" @click="cancelMarker">No</button></div>
         <div class="report-form" v-if="reportForm">
-            <div class="report-form-row">
-                <input type="text" placeholder="Title of place" class="title" data-field="title" @change="saveField" />
-            </div>
-            <div class="report-form-row">
-                <label for="time_start" class="main_label">Opening time:</label>
-                <input type="time" name="time_start" id="time_start" class="time_input"  data-field="from_time" @change="saveField"/>
-                <input type="time" name="time_end" class="time_input"  data-field="to_time" @change="saveField"/>
-            </div>
-            <div class="report-form-row">
-                <label class="main_label">Cash compensation</label>
-                <span>
-                    <label for="cash_yes">Yes</label><input type="radio" name="cash" value=1 id="cash_yes"  data-field="cash" @change="saveField"/>
-                </span>
-                <span>
-                    <label for="cash_no">No</label><input type="radio" name="cash" value=0 id="cash_no"  data-field="cash" @change="saveField"/>
-                </span>                
-            </div>
-            <div class="report-form-row">
-                <button class="report-form-save" @click="saveReport">Save</button>
+            <button class="button-x" @click="cancelForm">x</button>
+            <div class="vertical-center">
+                <div class="report-form-row">
+                    <input type="text" placeholder="Title of place" class="title" data-field="title" @change="saveField" />
+                </div>
+                <div class="report-form-row">
+                    <label for="time_start" class="main_label">Opening time:</label>
+                    <input type="time" name="time_start" id="time_start" class="time_input"  data-field="from_time" @change="saveField"/>
+                    <input type="time" name="time_end" class="time_input"  data-field="to_time" @change="saveField"/>
+                </div>
+                <div class="report-form-row">
+                    <label class="main_label">Cash compensation</label>
+                    <span>
+                        <label for="cash_yes">Yes</label><input type="radio" name="cash" value=1 id="cash_yes"  data-field="cash" @change="saveField"/>
+                    </span>
+                    <span>
+                        <label for="cash_no">No</label><input type="radio" name="cash" value=0 id="cash_no"  data-field="cash" @change="saveField"/>
+                    </span>                
+                </div>
+                <div class="report-form-row">
+                    <button class="report-form-save" @click="saveReport">Save</button>
+                </div>
             </div>
         </div>
         <div class="report-form center" v-if="reportExistForm">
-            <label>The place is missing?</label>
-            <div>
-                <button class="but_yes" @click="ReportExistsPlace">Yes</button>&nbsp;
-                <button class="but_no" @click="ReportExistsPlace">No</button>
+            <div class="vertical-center">
+                <div>
+                    <label>The place is missing?</label>
+                </div>
+                <div>
+                    <button class="but_yes" @click="ReportExistsPlace">Yes</button>&nbsp;
+                    <button class="but_no" @click="ReportExistsPlace">No</button>
+                </div>
             </div>            
         </div>
         <div class="header">           
@@ -227,14 +242,15 @@ export default {
     top:20vh;
     left:10vw;
     z-index: 1;
-    padding:25% 10px 10px 10px;
+    /*padding:25% 10px 10px 10px;*/
+    padding:10px;
     border-radius: 5px;
 }
 .report-form-row{
     margin-bottom:20px;
 }
 .time_input{
-    width:24%;
+    width:25%;
 }
 .title{
     border:solid gray 1px;
@@ -275,5 +291,15 @@ export default {
 }
 .center{
     text-align: center;
+}
+.vertical-center{
+    position: absolute;
+    top:50%;
+    transform: translateY(-50%);
+    width:calc(100% - 20px);
+}
+.button-x{
+    float:right;
+    line-height: 0.5;
 }
 </style>
