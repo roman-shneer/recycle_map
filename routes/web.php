@@ -12,10 +12,6 @@ Route::get('/', function () {
     return Inertia\Inertia::render('Map');
 });
 
-Route::get('/about', function () {
-    return Inertia\Inertia::render('About');
-});
-
 Route::post('/place',function (Request $request){
 
     $input = $request->all();

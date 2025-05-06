@@ -33,12 +33,22 @@ class MapEngine {
             this.clickListener = this.map.addListener('click', (evt: google.maps.MapMouseEvent) => {
                 if (evt.latLng) {
                     this.cleanMarkers();
-                    const marker = this.addMarker({
-                        title: 'New Place', 
-                        position: evt.latLng
+                      const myImage = new Image();
+                      myImage.src = "/images/recycle.png";
+                    myImage.addEventListener('load', (_) => {
+                        const marker = this.addMarker({
+                            title: 'New Place', 
+                            position: evt.latLng,
+                            image:myImage
+                        });
+                        if (evt.latLng) {
+                            this.last_position = { lat: evt.latLng.lat(), lng: evt.latLng.lng() };
+                        }
+                        this.markerSet(marker);
+
                     });
-                    this.last_position = { lat: evt.latLng.lat(), lng: evt.latLng.lng() };
-                    this.markerSet(marker);
+                    
+                    
                 }
             });
         } else if(this.clickListener!=null) { 
@@ -273,7 +283,7 @@ class MapEngine {
             mapTypeId: "roadmap",
             mapTypeControl: false,
             streetViewControl: false,
-            fullscreenControl:false,
+            fullscreenControl: false,            
         } as google.maps.MapOptions);
         this.InfoWindow = new InfoWindow();    
         this.searchBoxServe();

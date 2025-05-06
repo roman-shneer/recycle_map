@@ -78,6 +78,7 @@ export default {
             this.reportFormConfirmation = false;
             const maps = toRaw(this.maps);
             maps.cleanMarkers();
+            maps.tryAddPlaces();
             this.reportModeEnd();
         },
 
@@ -189,14 +190,14 @@ export default {
         </div>
         <div class="header">           
             <button class="report-btn" @click="reportModeStart" v-if="!reportMode">Report about new place</button>
-            <div v-if="reportMode">Set Point on Map<button class="btn" @click="reportModeEnd">Cancel</button></div>
+            <div v-if="reportMode" >Set Point on Map<button class="btn" @click="reportModeEnd">Cancel</button></div>
         </div>        
         <input type="text" id="search"/>
         <div class="map" id="map">
         
         </div>
         <div class="footer">           
-            <a href="/about">About</a>
+            
         </div>
     </div>
 </template>
@@ -209,6 +210,7 @@ export default {
     border:solid black 1px;
     height: 5vh;
     text-align: center;
+    color:#fff;
 }
 .map{ 
     border:solid black 1px;
@@ -221,6 +223,7 @@ export default {
 }
 .report-btn{
     background:white;
+    color:#000;
     margin:5px auto;
     display:block;    
     padding:0px 20px;
@@ -228,11 +231,12 @@ export default {
 }
 .btn{
     background:white;
+    color:#000;
     padding:0 2px;
     line-height: 1;
-    border-radius: 1px;
+    border-radius: 3px;
     margin-left:5px;
-    margin-top:2px;
+    margin-top:7px;
 }
 .report-form{
     background: white;
@@ -242,7 +246,6 @@ export default {
     top:20vh;
     left:10vw;
     z-index: 1;
-    /*padding:25% 10px 10px 10px;*/
     padding:10px;
     border-radius: 5px;
 }
